@@ -7,4 +7,8 @@ python -m venv venv
 source venv/bin/activate  
 pip install opencv-python opencv-contrib-python
 
+## instruções de atualização  
+git pull  
+
+## instruções de execução    
 python cafe.py  

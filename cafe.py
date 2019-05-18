@@ -1,5 +1,9 @@
 import cv2
 import numpy as np
+#imports para PICamera
+from picamera.array import PiRGBArray
+from picamera import PiCamera
+import time
 
 def encontra_cor(img): #imagem deve estar em formato RGB
     red = 0
@@ -40,17 +44,51 @@ def texto(img, texto, coord, fonte = cv2.FONT_HERSHEY_SIMPLEX, cor=(0,0,255), ta
 
 if __name__ == '__main__':
 
-    vc = cv2.VideoCapture(0)
-    vc.set(cv2.CAP_PROP_FRAME_WIDTH,320)  
-    vc.set(cv2.CAP_PROP_FRAME_HEIGHT,240)
-    if vc.isOpened(): # try to get the first frame
-        is_capturing, frame = vc.read()
-    else:
-        is_capturing = False  
+    #PARA USAR COM CAMERA USB
+    #vc = cv2.VideoCapture(0)
+    #vc.set(cv2.CAP_PROP_FRAME_WIDTH,320)  
+    #vc.set(cv2.CAP_PROP_FRAME_HEIGHT,240)
+    #if vc.isOpened(): # try to get the first frame
+    #    is_capturing, frame = vc.read()
+    #else:
+    #    is_capturing = False  
 
-    while is_capturing:
+    #PARA USAR COM CAMERA PI
+    camera = PiCamera()
+    #camera.resolution = (640, 480) # sequiser mudar a resolução padrao
+    #camera.resolution = (320, 240) # sequiser mudar a resolução padrao
+    #camera.resolution = (1920, 1080) # sequiser mudar a resolução padrao
+    camera.framerate = 32
+    rawCapture = PiRGBArray(camera, size=(320, 240))
+    # allow the camera to warmup
+    time.sleep(0.1)
+
+    primeiro_frame = 0
+    #while is_capturing:
+    roi = [] # cria variável roi
+    for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True): # para uso com Pi Camera
+        
+        # grab the raw NumPy array representing the image, then initialize the timestamp
+        # and occupied/unoccupied text
+        frame = frame.array
+        frame = frame.copy()
+
+        #No Primeiro Frame faz a calibragem do ROI (Region of Interest)
+       
+        if primeiro_frame == 0:
+            primeiro_frame = 1
+            roi = cv2.selectROI(frame[::2,::2]) #diminui a imagem para escolher regiao de interesse
+            roi = (roi[0]*2, roi[1]*2, roi[2]*2, roi[3]*2)
+            print('>> ROI:', roi)
+            cv2.destroyAllWindows()
+          
+        #aplica ROI em todos os frames do primeiro em diante
+        frame = frame[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
+        img_width, img_height = frame.shape[1], frame.shape[0] 
+        print('Shape:', img_width, img_height)
+
         try:    # Lookout for a keyboardInterrupt to stop the script
-            is_capturing, frame = vc.read()   
+            #is_capturing, frame = vc.read()   # somente para camera USB
 
             #frame = cv2.resize(frame[:,:,::-1], (320,240))
 
@@ -68,8 +106,11 @@ if __name__ == '__main__':
             # if the `q` key was pressed, break from the loop
             if key == ord("q"):
                 break
+            # clear the stream in preparation for the next frame
+            rawCapture.truncate(0) # para uso com Pi Camera
+        
         except KeyboardInterrupt:
-            vc.release()
+            # vc.release() # só usado com camera USB
             cv2.destroyAllWindows()
 
 

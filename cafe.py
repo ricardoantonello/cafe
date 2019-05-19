@@ -170,7 +170,9 @@ if __name__ == '__main__':
             
             imprime_cor(frameBGR.copy())
             histRGB = histogramaRGB(frameBGR.copy())
+            histRGB = cv2.resize(histRGB.copy(), (320,240), interpolation = cv2.INTER_AREA)
             histHSV = histogramaHSV(frameBGR.copy())
+            histHSV = cv2.resize(histHSV.copy(), (320,240), interpolation = cv2.INTER_AREA)
             size = (histRGB.shape[1], histRGB.shape[0])
             frameRGB_res = cv2.resize(frameRGB, size, interpolation = cv2.INTER_AREA)
             frameBGR_res = cv2.resize(frameBGR, size, interpolation = cv2.INTER_AREA)

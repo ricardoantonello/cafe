@@ -4,6 +4,50 @@ import numpy as np
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import time
+from matplotlib import pyplot as plt
+
+def histogramaRGB(img):
+    #Separa os canais
+    canais = cv2.split(img)
+    cores = ("b", "g", "r")
+    plt.figure()
+    plt.title("'Histograma Colorido")
+    plt.xlabel("Intensidade")
+    plt.ylabel("Número de Pixels")
+    for (canal, cor) in zip(canais, cores):
+        #Este loop executa 3 vezes, uma para cada canal
+        hist = cv2.calcHist([canal], [0], None, [256], [0, 256])
+        plt.plot(hist, cor = cor)
+        plt.xlim([0, 256])
+    # If we haven't already shown or saved the plot, then we need to
+    # draw the figure first...
+    plt.canvas.draw()
+    # Now we can save it to a numpy array.
+    data = np.fromstring(plt.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+    data = data.reshape(plt.canvas.get_width_height()[::-1] + (3,))
+    return data
+
+def histogramaHSV(img):
+    #Separa os canais
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    canais = cv2.split(hsv)
+    cores = ("H", "S", "V")
+    plt.figure()
+    plt.title("'Histograma HSV")
+    plt.xlabel("Intensidade")
+    plt.ylabel("Número de Pixels")
+    for (canal, cor) in zip(canais, cores):
+        #Este loop executa 3 vezes, uma para cada canal
+        hist = cv2.calcHist([canal], [0], None, [256], [0, 256])
+        plt.plot(hist, cor = cor)
+        plt.xlim([0, 256])
+    # If we haven't already shown or saved the plot, then we need to
+    # draw the figure first...
+    plt.canvas.draw()
+    # Now we can save it to a numpy array.
+    data = np.fromstring(plt.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+    data = data.reshape(plt.canvas.get_width_height()[::-1] + (3,))
+    return data
 
 def encontra_cor(img): #imagem deve estar em formato RGB
     red = 0
@@ -23,7 +67,7 @@ def encontra_cor(img): #imagem deve estar em formato RGB
     if red>green and red>blue:
         return "Vermelho"+','+str(red)+','+str(green)+','+str(blue)
     elif green>red and green>blue:
-        return "Verdade"+','+str(red)+','+str(green)+','+str(blue)
+        return "Verde"+','+str(red)+','+str(green)+','+str(blue)
     elif blue>red and blue>green:
         return "Azul"+','+str(red)+','+str(green)+','+str(blue)
     else:
@@ -58,8 +102,8 @@ if __name__ == '__main__':
     #camera.resolution = (640, 480) # sequiser mudar a resolução padrao
     #camera.resolution = (320, 240) # sequiser mudar a resolução padrao
     #camera.resolution = (1920, 1080) # sequiser mudar a resolução padrao
-    camera.framerate = 32
-    rawCapture = PiRGBArray(camera, size=(320, 240))
+    #camera.framerate = 32
+    rawCapture = PiRGBArray(camera)  # , size=(320, 240))
     # allow the camera to warmup
     time.sleep(0.1)
 
@@ -85,23 +129,32 @@ if __name__ == '__main__':
         #aplica ROI em todos os frames do primeiro em diante
         frame = frame[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
         img_width, img_height = frame.shape[1], frame.shape[0] 
-        print('Shape:', img_width, img_height)
+        #print('Shape:', img_width, img_height)
 
         try:    # Lookout for a keyboardInterrupt to stop the script
             #is_capturing, frame = vc.read()   # somente para camera USB
 
             #frame = cv2.resize(frame[:,:,::-1], (320,240))
-
+            frameBGR = frame.copy()
             frame = frame[:,:,::-1] # inverte BGR para RGB
             cor = encontra_cor(frame)
-            #print(cor)
-            frame = texto(frame.copy(), cor, (10,25))
+            print(cor)
+            #frame = texto(frame.copy(), cor, (10,25))
             window_name = "Cafe"
             #cv2.namedWindow(window_name, flags=cv2.WND_PROP_FULLSCREEN);
             #cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
             #cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
             frame = frame[:,:,::-1] # inverte BGR para RGB
-            cv2.imshow(window_name, frame) #converte para BGR para mostrar
+            hist1 = histogramaRGB(frameBGR.copy())
+            hist2 = histogramaHSV(frameBGR.copy())
+
+            join = np.vstack([
+                np.hstack([frame, cv2.blur(frameBGR, (3, 3))]),
+                np.hstack([histRGB, histHSV]),
+            ])
+
+
+            cv2.imshow(window_name, join) #converte para BGR para mostrar
             key = cv2.waitKey(1) & 0xFF
             # if the `q` key was pressed, break from the loop
             if key == ord("q"):

@@ -25,6 +25,7 @@ def histogramaRGB(img):
     # Now we can save it to a numpy array.
     data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
     data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    plt.close('all')
     return data
 
 def histogramaHSV(img):
@@ -47,6 +48,7 @@ def histogramaHSV(img):
     # Now we can save it to a numpy array.
     data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
     data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    plt.close('all')
     return data
 
 def imprime_cor(img): #imagem deve estar em formato RGB
@@ -133,10 +135,10 @@ if __name__ == '__main__':
     # allow the camera to warmup
     time.sleep(0.1)
 
-    primeiro_frame = 0
+    frame_count = 0
     #while is_capturing:
     roi = [] # cria variável roi
-    contador = 0
+    imagem_limpa = []
     for frame in camera.capture_continuous(rawCapture, format="rgb", use_video_port=True): # para uso com Pi Camera
         
         # grab the raw NumPy array representing the image, then initialize the timestamp
@@ -146,8 +148,9 @@ if __name__ == '__main__':
 
         #No Primeiro Frame faz a calibragem do ROI (Region of Interest)
        
-        if primeiro_frame == 0:
-            primeiro_frame = 1
+        if frame_count == 0:
+            print('Faça o retangulo mas antes de apertar [Enter] retire o grão')
+            frame_count = 1
             roi = cv2.selectROI(frame[::2,::2,::-1]) #diminui a imagem para escolher regiao de interesse
             roi = (roi[0]*2, roi[1]*2, roi[2]*2, roi[3]*2)
             print('>> ROI:', roi)
@@ -158,46 +161,53 @@ if __name__ == '__main__':
         img_width, img_height = frame.shape[1], frame.shape[0] 
         #print('Shape:', img_width, img_height)
 
-        try:    # Lookout for a keyboardInterrupt to stop the script
-            #is_capturing, frame = vc.read()   # somente para camera USB
+        if frame_count <= 5:
+            if frame_count == 5:
+                imagem_limpa = frame.copy()    
+                print('Framse limpo capturado! Insira o grão na área demarcada!')
+            imprime_cor(frame)
+            frame_count += 1
+        else:
+            try:    # Lookout for a keyboardInterrupt to stop the script
+                #is_capturing, frame = vc.read()   # somente para camera USB
 
-            #frame = cv2.resize(frame[:,:,::-1], (320,240))
+                #frame = cv2.resize(frame[:,:,::-1], (320,240))
+                
 
-            frameRGB = frame[:,:,::-1] # inverte BGR para RGB
-            #cor = encontra_cor(frame)
-            
-            frameBGR = frame.copy()
-            #frame = texto(frame.copy(), cor, (10,25))
-            
-            imprime_cor(frameBGR.copy())
-            histRGB = histogramaRGB(frameBGR.copy())
-            histRGB = cv2.resize(histRGB.copy(), (320,240), interpolation = cv2.INTER_AREA)
-            histHSV = histogramaHSV(frameBGR.copy())
-            histHSV = cv2.resize(histHSV.copy(), (320,240), interpolation = cv2.INTER_AREA)
-            size = (histRGB.shape[1], histRGB.shape[0])
-            frameRGB_res = cv2.resize(frameRGB, size, interpolation = cv2.INTER_AREA)
-            frameBGR_res = cv2.resize(frameBGR, size, interpolation = cv2.INTER_AREA)
-            join = np.vstack([
-                np.hstack([frameRGB_res, frameBGR_res]),
-                np.hstack([histRGB, histHSV]),
-            ])
+                frameRGB = frame[:,:,::-1] # inverte BGR para RGB
+                #cor = encontra_cor(frame)
+                
+                frameBGR = frame.copy()
+                frame_sub = frameBGR - imagem_limpa
+                #frame = texto(frame.copy(), cor, (10,25))
+                
+                imprime_cor(frameBGR.copy())
+                histRGB = histogramaRGB(frame_sub.copy())
+                histRGB = cv2.resize(histRGB.copy(), (320,240), interpolation = cv2.INTER_AREA)
+                histHSV = histogramaHSV(frame_sub.copy())
+                histHSV = cv2.resize(histHSV.copy(), (320,240), interpolation = cv2.INTER_AREA)
+                size = (histRGB.shape[1], histRGB.shape[0])
+                frameRGB_res = cv2.resize(frameRGB, size, interpolation = cv2.INTER_AREA)
+                frame_sub_res = cv2.resize(frame_sub, size, interpolation = cv2.INTER_AREA)
+                
+                join = np.vstack([
+                    np.hstack([frameRGB_res, frame_sub_res]),
+                    np.hstack([histRGB, histHSV]),
+                ])
 
-            window_name = "Cafe"
-            #cv2.namedWindow(window_name, flags=cv2.WND_PROP_FULLSCREEN);
-            #cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
-            #cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-            cv2.imshow(window_name, join) #converte para BGR para mostrar
-            key = cv2.waitKey(1) & 0xFF
-            # if the `q` key was pressed, break from the loop
-            if key == ord("q"):
-                break
-            # clear the stream in preparation for the next frame
-            rawCapture.truncate(0) # para uso com Pi Camera
-            contador+=1
-            if contador>10:
-                break
-        except KeyboardInterrupt:
-            # vc.release() # só usado com camera USB
-            cv2.destroyAllWindows()
+                window_name = "Cafe"
+                #cv2.namedWindow(window_name, flags=cv2.WND_PROP_FULLSCREEN);
+                #cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
+                #cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+                cv2.imshow(window_name, join) #converte para BGR para mostrar
+                key = cv2.waitKey(1) & 0xFF
+                # if the `q` key was pressed, break from the loop
+                if key == ord("q"):
+                    break
+            except KeyboardInterrupt:
+                # vc.release() # só usado com camera USB
+                cv2.destroyAllWindows()
+        # clear the stream in preparation for the next frame
+        rawCapture.truncate(0) # para uso com Pi Camera
 
 

@@ -10,44 +10,70 @@ def histogramaRGB(img):
     #Separa os canais
     canais = cv2.split(img)
     cores = ("b", "g", "r")
-    plt.figure()
+    fig = plt.figure()
     plt.title("'Histograma Colorido")
     plt.xlabel("Intensidade")
     plt.ylabel("Número de Pixels")
     for (canal, cor) in zip(canais, cores):
         #Este loop executa 3 vezes, uma para cada canal
         hist = cv2.calcHist([canal], [0], None, [256], [0, 256])
-        plt.plot(hist, cor = cor)
+        plt.plot(hist, color = cor)
         plt.xlim([0, 256])
     # If we haven't already shown or saved the plot, then we need to
     # draw the figure first...
-    plt.canvas.draw()
+    fig.canvas.draw()
     # Now we can save it to a numpy array.
-    data = np.fromstring(plt.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-    data = data.reshape(plt.canvas.get_width_height()[::-1] + (3,))
+    data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
     return data
 
 def histogramaHSV(img):
     #Separa os canais
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     canais = cv2.split(hsv)
-    cores = ("H", "S", "V")
-    plt.figure()
+    cores = ("m", "c", "y")
+    fig = plt.figure()
     plt.title("'Histograma HSV")
     plt.xlabel("Intensidade")
     plt.ylabel("Número de Pixels")
     for (canal, cor) in zip(canais, cores):
         #Este loop executa 3 vezes, uma para cada canal
         hist = cv2.calcHist([canal], [0], None, [256], [0, 256])
-        plt.plot(hist, cor = cor)
+        plt.plot(hist, color = cor)
         plt.xlim([0, 256])
     # If we haven't already shown or saved the plot, then we need to
     # draw the figure first...
-    plt.canvas.draw()
+    fig.canvas.draw()
     # Now we can save it to a numpy array.
-    data = np.fromstring(plt.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-    data = data.reshape(plt.canvas.get_width_height()[::-1] + (3,))
+    data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
     return data
+
+def imprime_cor(img): #imagem deve estar em formato RGB
+    blue = 0
+    for p in np.ravel(img[::4,::4,0]):
+       blue+=p
+    green = 0
+    for p in np.ravel(img[::4,::4,1]):
+       green+=p
+    red = 0
+    for p in np.ravel(img[::4,::4,2]):
+       red+=p
+    print('red:',red,' green:',green,' blue:',blue, end='')
+
+    hsv = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2HSV)
+    h = 0
+    for p in np.ravel(hsv[::4,::4,0]):
+       h+=p
+    s = 0
+    for p in np.ravel(hsv[::4,::4,1]):
+       s+=p
+    v = 0
+    for p in np.ravel(hsv[::4,::4,2]):
+       v+=p
+    print('       hue:',h,' saturation:', s,' value:', v)
+
+
 
 def encontra_cor(img): #imagem deve estar em formato RGB
     red = 0
@@ -110,18 +136,18 @@ if __name__ == '__main__':
     primeiro_frame = 0
     #while is_capturing:
     roi = [] # cria variável roi
-    for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True): # para uso com Pi Camera
+    for frame in camera.capture_continuous(rawCapture, format="rgb", use_video_port=True): # para uso com Pi Camera
         
         # grab the raw NumPy array representing the image, then initialize the timestamp
         # and occupied/unoccupied text
         frame = frame.array
-        frame = frame.copy()
+        #frame = frame.copy()
 
         #No Primeiro Frame faz a calibragem do ROI (Region of Interest)
        
         if primeiro_frame == 0:
             primeiro_frame = 1
-            roi = cv2.selectROI(frame[::2,::2]) #diminui a imagem para escolher regiao de interesse
+            roi = cv2.selectROI(frame[::2,::2,::-1]) #diminui a imagem para escolher regiao de interesse
             roi = (roi[0]*2, roi[1]*2, roi[2]*2, roi[3]*2)
             print('>> ROI:', roi)
             cv2.destroyAllWindows()
@@ -135,25 +161,28 @@ if __name__ == '__main__':
             #is_capturing, frame = vc.read()   # somente para camera USB
 
             #frame = cv2.resize(frame[:,:,::-1], (320,240))
+
+            frameRGB = frame[:,:,::-1] # inverte BGR para RGB
+            #cor = encontra_cor(frame)
+            
             frameBGR = frame.copy()
-            frame = frame[:,:,::-1] # inverte BGR para RGB
-            cor = encontra_cor(frame)
-            print(cor)
             #frame = texto(frame.copy(), cor, (10,25))
+            
+            imprime_cor(frameBGR.copy())
+            histRGB = histogramaRGB(frameBGR.copy())
+            histHSV = histogramaHSV(frameBGR.copy())
+            size = (histRGB.shape[1], histRGB.shape[0])
+            frameRGB_res = cv2.resize(frameRGB, size, interpolation = cv2.INTER_AREA)
+            frameBGR_res = cv2.resize(frameBGR, size, interpolation = cv2.INTER_AREA)
+            join = np.vstack([
+                np.hstack([frameRGB_res, frameBGR_res]),
+                np.hstack([histRGB, histHSV]),
+            ])
+
             window_name = "Cafe"
             #cv2.namedWindow(window_name, flags=cv2.WND_PROP_FULLSCREEN);
             #cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
             #cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-            frame = frame[:,:,::-1] # inverte BGR para RGB
-            hist1 = histogramaRGB(frameBGR.copy())
-            hist2 = histogramaHSV(frameBGR.copy())
-
-            join = np.vstack([
-                np.hstack([frame, cv2.blur(frameBGR, (3, 3))]),
-                np.hstack([histRGB, histHSV]),
-            ])
-
-
             cv2.imshow(window_name, join) #converte para BGR para mostrar
             key = cv2.waitKey(1) & 0xFF
             # if the `q` key was pressed, break from the loop

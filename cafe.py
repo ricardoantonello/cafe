@@ -136,6 +136,7 @@ if __name__ == '__main__':
     primeiro_frame = 0
     #while is_capturing:
     roi = [] # cria variável roi
+    contador = 0
     for frame in camera.capture_continuous(rawCapture, format="rgb", use_video_port=True): # para uso com Pi Camera
         
         # grab the raw NumPy array representing the image, then initialize the timestamp
@@ -192,7 +193,9 @@ if __name__ == '__main__':
                 break
             # clear the stream in preparation for the next frame
             rawCapture.truncate(0) # para uso com Pi Camera
-        
+            contador+=1
+            if contador>10:
+                break
         except KeyboardInterrupt:
             # vc.release() # só usado com camera USB
             cv2.destroyAllWindows()

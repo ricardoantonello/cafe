@@ -16,9 +16,9 @@ def histogramaRGB(img):
     plt.ylabel("Número de Pixels")
     for (canal, cor) in zip(canais, cores):
         #Este loop executa 3 vezes, uma para cada canal
-        hist = cv2.calcHist([canal], [0], None, [256], [0, 256])
+        hist = cv2.calcHist([canal], [0], None, [256], [0, 255])
         plt.plot(hist, color = cor)
-        plt.xlim([0, 256])
+        plt.xlim([100, 200])
     # If we haven't already shown or saved the plot, then we need to
     # draw the figure first...
     fig.canvas.draw()
@@ -61,7 +61,7 @@ def imprime_cor(img): #imagem deve estar em formato RGB
     red = 0
     for p in np.ravel(img[::4,::4,2]):
        red+=p
-    print('red:',red,' green:',green,' blue:',blue, end='')
+    print('red:',red/1000,' green:',green/1000,' blue:',blue/1000, end='')
 
     hsv = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2HSV)
     h = 0
@@ -73,7 +73,7 @@ def imprime_cor(img): #imagem deve estar em formato RGB
     v = 0
     for p in np.ravel(hsv[::4,::4,2]):
        v+=p
-    print('       hue:',h,' saturation:', s,' value:', v)
+    print('       hue:',h/1000,' saturation:', s/1000,' value:', v/1000)
 
 
 
@@ -184,15 +184,15 @@ if __name__ == '__main__':
                 imprime_cor(frameBGR.copy())
                 histRGB = histogramaRGB(frame_sub.copy())
                 histRGB = cv2.resize(histRGB.copy(), (320,240), interpolation = cv2.INTER_AREA)
-                histHSV = histogramaHSV(frame_sub.copy())
-                histHSV = cv2.resize(histHSV.copy(), (320,240), interpolation = cv2.INTER_AREA)
+                #histHSV = histogramaHSV(frame_sub.copy())
+                #histHSV = cv2.resize(histHSV.copy(), (320,240), interpolation = cv2.INTER_AREA)
                 size = (histRGB.shape[1], histRGB.shape[0])
                 frameRGB_res = cv2.resize(frameRGB, size, interpolation = cv2.INTER_AREA)
                 frame_sub_res = cv2.resize(frame_sub, size, interpolation = cv2.INTER_AREA)
                 
                 join = np.vstack([
                     np.hstack([frameRGB_res, frame_sub_res]),
-                    np.hstack([histRGB, histHSV]),
+                    np.hstack([histRGB, histRGB]),
                 ])
 
                 window_name = "Cafe"

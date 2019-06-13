@@ -155,7 +155,7 @@ if __name__ == '__main__':
                 #print([frameRGB_res.shape, frame_sub_res.shape, frameBP.shape]),
                 #print([histRGB.shape, histHSV.shape, mascara_res.shape]),
 		
-		frameRGB_res = texto(frameRGB_res, cor_encontrada, (10,30))
+                frameRGB_res = texto(frameRGB_res, cor_encontrada, (10,30))
 
                 join = np.vstack([
                     np.hstack([frameRGB_res, frame_sub_res, frameBP]),

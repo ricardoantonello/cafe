@@ -84,45 +84,20 @@ def imprime_cor(img): #imagem deve estar em formato RGB
     
     for p in np.ravel(img[::4,::4,2]):
        red+=p
-    print('red:',red/1000,' green:',green/1000,' blue:',blue/1000, end='')
+    red   = red/1000
+    green = green/1000
+    blue  = blue/1000
 
-    hsv = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2HSV)
-    h = 0
-    for p in np.ravel(hsv[::4,::4,0]):
-       h+=p
-    s = 0
-    for p in np.ravel(hsv[::4,::4,1]):
-       s+=p
-    v = 0
-    for p in np.ravel(hsv[::4,::4,2]):
-       v+=p
-    print('       hue:',h/1000,' saturation:', s/1000,' value:', v/1000)
-
-
-
-def encontra_cor(img): #imagem deve estar em formato RGB
-    red = 0
-    for p in np.ravel(img[::4,::4,0]):
-        if p>100:
-            red+=1
-    green = 0
-    for p in np.ravel(img[::4,::4,1]):
-        if p>100:
-            green+=1
-    blue = 0
-    for p in np.ravel(img[::4,::4,2]):
-        if p>100:
-            blue+=1
-
-    #print('r',red,'g',green,'b',blue)
-    if red>green and red>blue:
-        return "Vermelho"+','+str(red)+','+str(green)+','+str(blue)
-    elif green>red and green>blue:
-        return "Verde"+','+str(red)+','+str(green)+','+str(blue)
-    elif blue>red and blue>green:
-        return "Azul"+','+str(red)+','+str(green)+','+str(blue)
-    else:
-        return ''+','+str(red)+','+str(green)+','+str(blue)
+    print('red:',red,' green:',green,' blue:',blue, end='')
+    if red>15 && red<35 && green>20 && green<38: 
+       print('GRAO PRETO')
+       return 'PRETO'
+    if red>50 && red<90 && green>50 && green<90: 
+       print('GRAO VERDE')
+       return 'VERDE'
+    if red>35 && red<80 && green>20 && green<60: 
+       print('GRAO ARDIDO')
+       return 'ARDIDO'
 
 def texto(img, texto, coord, fonte = cv2.FONT_HERSHEY_SIMPLEX, cor=(0,0,255), tamanho=0.7, thickness=2):
     textSize, baseline = cv2.getTextSize(texto, fonte, tamanho, thickness);
@@ -152,7 +127,6 @@ if __name__ == '__main__':
         #print('Shape:', img_width, img_height)
         try:    # Lookout for a keyboardInterrupt to stop the script
                 frameRGB = frame[:,:,::-1] # inverte BGR para RGB
-                #cor = encontra_cor(frame)
                 
                 # find the colors within the specified boundaries and apply the mask
                 #mask = cv2.inRange(frameRGB, (0,0,0), (200,200,200))
@@ -163,7 +137,7 @@ if __name__ == '__main__':
                 #mascara = cv2.cvtColor(cv2.merge([mask,mask,mask]), cv2.COLOR_BGR2GRAY)
                 mascara = cv2.merge([mask,mask,mask])
                 
-                imprime_cor(frame_sub.copy())
+                cor_encontrada = imprime_cor(frame_sub.copy())
                 histRGB = histogramaRGB(frame_sub.copy())
                 histRGB = cv2.resize(histRGB.copy(), (320,240), interpolation = cv2.INTER_AREA)
                 histPB = histogramaPB(frame_sub.copy())
@@ -180,7 +154,9 @@ if __name__ == '__main__':
                 
                 #print([frameRGB_res.shape, frame_sub_res.shape, frameBP.shape]),
                 #print([histRGB.shape, histHSV.shape, mascara_res.shape]),
-                
+		
+		frameRGB_res = texto(frameRGB_res, cor_encontrada, (10,30))
+
                 join = np.vstack([
                     np.hstack([frameRGB_res, frame_sub_res, frameBP]),
                     np.hstack([histRGB, histPB, mascara_res]),

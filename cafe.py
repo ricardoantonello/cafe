@@ -89,13 +89,13 @@ def imprime_cor(img): #imagem deve estar em formato RGB
     blue  = blue/1000
 
     print('red:',red,' green:',green,' blue:',blue, end='')
-    if red>15 && red<35 && green>20 && green<38: 
+    if red>15 and red<35 and green>20 and green<38: 
        print('GRAO PRETO')
        return 'PRETO'
-    if red>50 && red<90 && green>50 && green<90: 
+    if red>50 and red<90 and green>50 and green<90: 
        print('GRAO VERDE')
        return 'VERDE'
-    if red>35 && red<80 && green>20 && green<60: 
+    if red>35 and red<80 and green>20 and green<60: 
        print('GRAO ARDIDO')
        return 'ARDIDO'
 
